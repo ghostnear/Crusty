@@ -57,6 +57,8 @@ fn bench_beer() {
 }
 */
 
+/*
+ *  TODO: this test doesn't even get close to 5s.
 #[divan::bench(
     max_time = 5,
     sample_size = 1,
@@ -67,3 +69,4 @@ fn bench_simple_benchmark() {
     emulator.load_from_file(black_box("../roms/benchmarks/bf/bench.b"));
     emulator.run()
 }
+*/
