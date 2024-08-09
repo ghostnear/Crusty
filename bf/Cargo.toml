@@ -3,7 +3,7 @@ name = "bf"
 version = "1.0.0"
 edition = "2021"
 
-[dependencies]
+[dev-dependencies]
 divan = "0.1.14"
 
 [[bench]]

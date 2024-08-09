@@ -5,3 +5,8 @@ edition = "2021"
 
 [dependencies]
 bf = { path = "bf" }
+
+[workspace]
+members = [
+    "bf",
+]
