@@ -1,12 +1,8 @@
-mod bf;
 use std::io;
 use std::env::args;
 
 fn main()
 {
-    use std::time::Instant;
-    let now = Instant::now();
-
     let mut emulator = bf::Emulator::new();
 
     let args: Vec<String> = args().collect();
@@ -23,7 +19,6 @@ fn main()
     }
 
     emulator.run();
-
-    let elapsed = now.elapsed();
-    println!("Elapsed: {:.2?}", elapsed);
+    
+    print!("{}", emulator.get_output());
 }

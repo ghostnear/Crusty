@@ -1,9 +1,10 @@
+use std::io::Write;
 use std::{borrow::BorrowMut, fs};
 
 struct Instruction
 {
-    operation: fn(&mut State, i32),
-    parameter: i32
+    operation: fn(&mut State, isize),
+    parameter: isize
 }
 
 impl std::fmt::Display for Instruction
@@ -28,37 +29,38 @@ impl std::fmt::Display for Instruction
 
 struct State
 {
-    data: Vec<u32>,
+    data: Vec<usize>,
     instructions: Vec<Instruction>,
-    pc: u32,
-    dp: u32
+    output: Vec<u8>,
+    pc: usize,
+    dp: usize
 }
 
 impl State
 {
-    fn op_add_to_dp(&mut self, parameter: i32)
+    fn op_add_to_dp(&mut self, parameter: isize)
     {
         self.dp = self.dp.wrapping_add_signed(parameter);
-        if self.dp >= self.data.len() as u32
+        if self.dp >= self.data.len()
         {
             self.data.resize((self.dp + 1) as usize, 0);
         }
         self.pc += 1;
     }
 
-    fn op_add_to_data(&mut self, parameter: i32)
+    fn op_add_to_data(&mut self, parameter: isize)
     {
         self.data[self.dp as usize] = self.data[self.dp as usize].wrapping_add_signed(parameter);
         self.pc += 1;
     }
 
-    fn op_print(&mut self, _parameter: i32)
+    fn op_print(&mut self, _parameter: isize)
     {
-        print!("{}", (self.data[self.dp as usize] as u8) as char);
+        write!(self.output, "{}", (self.data[self.dp as usize] as u8) as char).ok();
         self.pc += 1;
     }
 
-    fn op_jump(&mut self, parameter: i32)
+    fn op_jump(&mut self, parameter: isize)
     {
         if (parameter < 0 && self.data[self.dp as usize] == 0) || (parameter > 0 && self.data[self.dp as usize] != 0)
         {
@@ -73,6 +75,7 @@ impl State
     {
         let mut result = State{
             data: Vec::new(),
+            output: Vec::new(),
             instructions: Vec::new(),
             pc: 0,
             dp: 0,
@@ -84,15 +87,21 @@ impl State
     pub fn parse(&mut self, input: &str)
     {
         macro_rules! bf_instruction {
+            ($function: expr, $value: expr) => {
+                self.instructions.push(Instruction{
+                    operation: $function,
+                    parameter: $value
+                })
+            };
+        }
+
+        macro_rules! bf_symbol {
             ($function: expr, $change: expr) => {
                 let last_instruction = self.instructions.last_mut();
                 // If instruction should be added to the list.
                 if last_instruction.is_none() || last_instruction.unwrap().operation != $function
                 {
-                    self.instructions.push(Instruction{
-                        operation: $function,
-                        parameter: $change
-                    });
+                    bf_instruction!($function, $change);
                 }
                 else
                 {
@@ -112,27 +121,24 @@ impl State
             match character
             {
                 '>' => {
-                    bf_instruction!(State::op_add_to_dp, 1);
+                    bf_symbol!(State::op_add_to_dp, 1);
                 }
                 '<' => {
-                    bf_instruction!(State::op_add_to_dp, -1);
+                    bf_symbol!(State::op_add_to_dp, -1);
                 },
                 '+' => {
-                    bf_instruction!(State::op_add_to_data, 1);
+                    bf_symbol!(State::op_add_to_data, 1);
                 }
                 '-' => {
-                    bf_instruction!(State::op_add_to_data, -1);
+                    bf_symbol!(State::op_add_to_data, -1);
                 }
                 '[' => {
                     // First parantheses pushed to the 'stack'.
-                    self.instructions.push(Instruction{
-                        operation: State::op_jump,
-                        parameter: 0
-                    });
+                    bf_instruction!(State::op_jump, 0);
                 }
                 ']' => {
                     // Find the previous one and update jumps if found.
-                    let length = self.instructions.len() as i32;
+                    let length = self.instructions.len() as isize;
                     let mut position = self.instructions.len() - 1;
                     let mut stop = false;
                     while !stop
@@ -141,15 +147,15 @@ impl State
                         if value.operation == State::op_jump && value.parameter == 0
                         {
                             // It's the last one, optimize it out.
-                            if length - position as i32 == 1 {
+                            if length - position as isize == 1 {
                                 self.instructions.pop();
                                 break;
                             }
 
-                            value.parameter = length - position as i32;
+                            value.parameter = length - position as isize;
                             self.instructions.push(Instruction{
                                 operation: State::op_jump,
-                                parameter: position as i32 - length
+                                parameter: position as isize - length
                             });
                             break;
                         }
@@ -161,10 +167,7 @@ impl State
                     }
                 }
                 '.' => {
-                    self.instructions.push(Instruction{
-                        operation: State::op_print,
-                        parameter: 0
-                    });
+                    bf_instruction!(State::op_print, 0);
                 }
                 // Ignore everything else.
                 _ => ()
@@ -198,7 +201,6 @@ impl std::fmt::Display for State
     }
 }
 
-
 pub struct Emulator
 {
     state: State
@@ -206,11 +208,6 @@ pub struct Emulator
 
 impl Emulator
 {
-    pub fn print_state(&self)
-    {
-        println!("{}", self.state);
-    }
-
     fn step(&mut self)
     {
         let state = &mut self.state;
@@ -239,6 +236,11 @@ impl Emulator
         return self.state.pc as usize != self.state.instructions.len();
     }
 
+    pub fn get_output(&self) -> String
+    {
+        return String::from_utf8(self.state.output.clone()).unwrap();
+    }
+
     pub fn load_from_string(&mut self, program: &str) -> &Self
     {
         self.state.parse(program);
@@ -249,8 +251,16 @@ impl Emulator
     {
         let input = match fs::read_to_string(path) {
             Ok(data) => data,
-            Err(error) => panic!("(BF): Could not read input from file '{error:?}'.")
+            Err(error) => panic!("(BF): Could not read input from file at path '{path}'. ({error})")
         };
         return self.load_from_string(&input);
+    }
+}
+
+impl std::fmt::Display for Emulator
+{
+    fn fmt(&self, out: &mut std::fmt::Formatter) -> std::fmt::Result
+    {
+        writeln!(out, "{}", self.state)
     }
 }

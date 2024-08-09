@@ -1,0 +1,11 @@
+[package]
+name = "bf"
+version = "1.0.0"
+edition = "2021"
+
+[dependencies]
+divan = "0.1.14"
+
+[[bench]]
+name = "all"
+harness = false
