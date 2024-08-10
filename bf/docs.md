@@ -4,7 +4,7 @@ This folder contains the submodule for the esoteric programming language BrainFu
 
 ### Execution modes:
 
-At the current moment ther are several ways to run this:
+At the current moment there are several ways to run this:
 - in a partially optimizing interpreter mode with optimizations such as:
     - [x] Reducing multiple sequences of instructions into one. (i.e >>> gets translated to op_add_dp(3))
     - [x] Reducing conflicting sequences of instructions. (i.e >>><< gets translated to op_add_dp(1))
@@ -41,3 +41,16 @@ As of the latest version, these results were achieved:
             - 39.54s
         - bench_mandlebrot
             - 25.91s
+
+- On a phone:
+    - Name:
+        - Motorola Edge 30
+    - Components:
+        - CPU: Qualcomm SM6150 (8) @ 1.708GHz
+    - Tests:
+        - bench_hanoi
+            - 19.5s
+        - bench_long_run
+            - 23.83s
+        - bench_mandlebrot
+            - 13.9s
