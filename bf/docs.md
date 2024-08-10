@@ -46,7 +46,7 @@ As of the latest version, these results were achieved:
     - Name:
         - Motorola Edge 30
     - Components:
-        - CPU: Qualcomm SM6150 (8) @ 1.708GHz
+        - CPU: Qualcomm SM7325-AE (8) @ 1.804GHz
     - Tests:
         - bench_hanoi
             - 19.5s
