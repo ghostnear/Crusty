@@ -1,6 +1,8 @@
-# BF - Crusty module.
+# BrainFuck - Crusty module.
 
-This folder contains the submodule for the esoteric programming language BrainFuck.
+This folder contains the submodule for running code written in the esoteric programming language BrainFuck.
+
+## The how.
 
 ### Execution modes:
 
@@ -13,44 +15,18 @@ At the current moment there are several ways to run this:
 
 More info on optimization levels [here](https://code.google.com/archive/p/esotope-bfc/wikis/Comparison.wiki).
 
+## The how fast.
+
 ### Benchmarks:
 
-As of the latest version, these results were achieved:
-- On a laptop:
-    - Name:
-        - 
-    - Components:
-        - CPU: 12th Gen Intel i7-12700H (20) @ 2.688GHz
-    - Tests:
-        - bench_hanoi
-            - 13.2s
-        - bench_long_run
-            - 16.58s
-        - bench_mandlebrot
-            - 11.07s
+#### In Interpreter Mode:
 
-- On a phone:
-    - Name:
-        - Samsung Galaxy A70q
-    - Components:
-        - CPU: Qualcomm SM6150 (8) @ 1.708GHz
-    - Tests:
-        - bench_hanoi
-            - 30.4s
-        - bench_long_run
-            - 39.54s
-        - bench_mandlebrot
-            - 25.91s
+| Device                | CPU                                                   | Mandelbrot    | Factoring         | Long Run  | Self Interpret    | Golden Ratio      | Hanoi     | 99 Bottles of Beer    | Simple Benchmark  |
+| :-------------------- | :---------------------------------------------------- | :-----------: | :---------------: | :-------: | :---------------: | :---------------: | :-------: | :-------------------: | :---------------: |
+| Windows 11 Laptop     | 12th Gen Intel(R) Core(TM) i7-12700H (20) @ 2.688GHz  | 9.93s         | More than 50s.    | 15.68s    | 36.39s            | 0.18s             | 13.77s    | More than 5s.         | More than 5s.     |
+| Motorola Edge 30      | Qualcomm SM7325-AE (8) @ 1.804GHz                     | 14.27s        | -                 | 25.09s    | 43.41s            | 0.28s             | 19.68s    | -                     | -                 |
+| Samsung Galaxy A70q   | Qualcomm SM6150 (8) @ 1.708GHz                        | 25.30s        | -                 | 42.72s    | 80.22s            | 0.44s             | 37.08s    | -                     | -                 |
 
-- On a phone:
-    - Name:
-        - Motorola Edge 30
-    - Components:
-        - CPU: Qualcomm SM7325-AE (8) @ 1.804GHz
-    - Tests:
-        - bench_hanoi
-            - 19.5s
-        - bench_long_run
-            - 23.83s
-        - bench_mandlebrot
-            - 13.9s
+Median times have been used for tests that are run multiple times because they are fast.
+
+Benchmarks have been done in the same style as the ones done [here](https://esolangs.org/wiki/User:David.werecat/BFBench).
