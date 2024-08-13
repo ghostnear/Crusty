@@ -1,58 +1,49 @@
 pub mod cpu;
-pub use cpu as CPU;
 pub mod input;
-pub use input as Input;
 
 use std::fs;
 
 pub struct Emulator
 {
-    state: cpu::State,
-    cpu: cpu::InterpreterCPU
+    cpu: Box<dyn cpu::CPU>
 }
 
 impl Emulator
 {
     pub fn run(&mut self)
     {
-        while self.is_running()
+        while self.cpu.is_running()
         {
-            self.cpu.step(&mut self.state);
+            self.cpu.step();
         }
     }
 
     pub fn new() -> Self
     {
         return Self{
-            state: cpu::State::new(Box::new(input::StringInput::new(""))),
-            cpu: cpu::InterpreterCPU::new()
+            cpu: Box::new(cpu::InterpreterCPU::new())
         };
     }
 
-    pub fn set_input(&mut self, new_input: Box<dyn input::Input + Send>) -> &Self
+    pub fn set_input(&mut self, new_input: Box<dyn input::Input>) -> &Self
     {
-        self.state.input = new_input;
+        self.cpu.get_state().input = new_input;
         return self;
     }
 
     pub fn reset(&mut self)
     {
-        self.state.reset();
+        self.cpu.as_mut().get_state().reset();
     }
 
-    pub fn is_running(&self) -> bool
+    pub fn get_output(&mut self) -> Vec<u8>
     {
-        return self.state.pc as usize != self.cpu.instructions.len();
+        return self.cpu.get_state().output.clone();
     }
 
-    pub fn get_output(&self) -> Vec<u8>
+    pub fn get_output_as_string(&mut self) -> String
     {
-        return self.state.output.clone();
-    }
-
-    pub fn get_output_as_string(&self) -> String
-    {
-        return String::from_utf8(self.state.output.clone()).expect("(BF): Output bytes are not valid UTF-8.");
+        return String::from_utf8(self.cpu.get_state().output.clone()).expect("(BF): Output bytes are not valid UTF-8.");
     }
 
     pub fn load_from_string(&mut self, program: &str) -> &Self
@@ -68,14 +59,5 @@ impl Emulator
             Err(error) => panic!("(BF): Could not read input from file at path '{path}'. ({error})")
         };
         return self.load_from_string(&input);
-    }
-}
-
-impl std::fmt::Display for Emulator
-{
-    fn fmt(&self, out: &mut std::fmt::Formatter) -> std::fmt::Result
-    {
-        write!(out, "{}", self.cpu).ok();
-        write!(out, "{}", self.state)
     }
 }

@@ -1,4 +1,7 @@
 use crate::cpu::State;
+use crate::input;
+
+use super::CPU;
 
 use std::io::Write;
 use std::borrow::BorrowMut;
@@ -16,14 +19,25 @@ impl Instruction
         state.dp = state.dp.wrapping_add_signed(parameter);
         if state.dp >= state.data.len()
         {
-            state.data.resize((state.dp + 1) as usize, 0);
+            let mut length = state.data.len();
+            while state.dp >= length
+            {
+                length *= 2;
+            }
+            state.data.resize(length, 0);
         }
+        state.pc += 1;
+    }
+
+    fn op_clear_cell(state: &mut State, _parameter: isize)
+    {
+        state.data[state.dp as usize] = 0;
         state.pc += 1;
     }
 
     fn op_add_to_data(state: &mut State, parameter: isize)
     {
-        state.data[state.dp as usize] = state.data[state.dp as usize].wrapping_add_signed(parameter);
+        state.data[state.dp as usize] = state.data[state.dp as usize].wrapping_add_signed(parameter as i8);
         state.pc += 1;
     }
 
@@ -35,7 +49,7 @@ impl Instruction
 
     fn op_read(state: &mut State, _parameter: isize)
     {
-        state.data[state.dp as usize] = state.input.read() as usize;
+        state.data[state.dp as usize] = state.input.read() as u8;
         state.pc += 1;
     }
 
@@ -51,41 +65,18 @@ impl Instruction
     }
 }
 
-impl std::fmt::Display for Instruction
+impl PartialEq for Instruction
 {
-    fn fmt(&self, out: &mut std::fmt::Formatter) -> std::fmt::Result
+    fn eq(&self, other: &Instruction) -> bool
     {
-        if self.operation == Instruction::op_add_to_dp
-        {
-            return write!(out, "ADD dp, {};", self.parameter);
-        }
-        if self.operation == Instruction::op_add_to_data
-        {
-            return write!(out, "ADD [dp], {};", self.parameter);
-        }
-        if self.operation == Instruction::op_jump
-        {
-            if self.parameter > 0
-            {
-                return write!(out, "JMPZ {};", self.parameter);
-            }
-            return write!(out, "JMPNZ {};", self.parameter);
-        }
-        if self.operation == Instruction::op_print
-        {
-            return write!(out, "PRINT;");
-        }
-        if self.operation == Instruction::op_read
-        {
-            return write!(out, "READ;");
-        }
-        panic!("(BF): Unknown instruction in format.")
+        return self.operation == other.operation && self.parameter == other.parameter;
     }
 }
 
 pub struct InterpreterCPU
 {
-    pub instructions: Vec<Instruction>
+    pub instructions: Vec<Instruction>,
+    state: State
 }
 
 impl InterpreterCPU
@@ -93,17 +84,36 @@ impl InterpreterCPU
     pub fn new() -> Self
     {
         return Self{
+            state: State::new(
+                Box::new(input::StringInput::new(""))
+            ),
             instructions: Vec::new()
         };
     }
+}
 
-    pub fn step(&mut self, state: &mut State)
-    {
-        let instruction = &self.instructions[state.pc as usize];
-        (instruction.operation)(state, instruction.parameter);
+impl CPU for InterpreterCPU
+{
+    fn get_state(&mut self) -> &mut State {
+        return &mut self.state
     }
 
-    pub fn parse(&mut self, input: &str)
+    fn set_state(&mut self, state: State) {
+        self.state = state;
+    }
+
+    fn step(&mut self)
+    {
+        let instruction = &self.instructions[self.state.pc as usize];
+        (instruction.operation)(&mut self.state, instruction.parameter);
+    }
+
+    fn is_running(&self) -> bool
+    {
+        return self.state.pc as usize != self.instructions.len()
+    }
+
+    fn parse(&mut self, input: &str)
     {
         macro_rules! bf_instruction {
             ($function: expr, $value: expr) => {
@@ -176,6 +186,26 @@ impl InterpreterCPU
                                 operation: Instruction::op_jump,
                                 parameter: position as isize - length
                             });
+                            
+                            // Optimization: [-] is basically data[dp] = 0;
+                            if self.instructions.ends_with(&[
+                                Instruction{operation: Instruction::op_jump, parameter: 2},
+                                Instruction{operation: Instruction::op_add_to_data, parameter: -1},
+                                Instruction{operation: Instruction::op_jump, parameter: -2},
+                            ]) || self.instructions.ends_with(&[
+                                Instruction{operation: Instruction::op_jump, parameter: 2},
+                                Instruction{operation: Instruction::op_add_to_data, parameter: 1},
+                                Instruction{operation: Instruction::op_jump, parameter: -2},
+                            ])
+                            {
+                                for _ in 0..3
+                                {
+                                    self.instructions.pop();
+                                }
+                                self.instructions.push(Instruction{operation: Instruction::op_clear_cell, parameter: 0});
+                            }
+
+                            // Optimization: [</>x] is basically 
                             break;
                         }
                         (position, stop) = position.overflowing_sub(1);
@@ -204,20 +234,5 @@ impl InterpreterCPU
                 panic!("(BF): Unmatched [ found in the program.")
             }
         }
-    }
-}
-
-impl std::fmt::Display for InterpreterCPU
-{
-    fn fmt(&self, out: &mut std::fmt::Formatter) -> std::fmt::Result
-    {
-        writeln!(out, "Mode: Interpreter").ok();
-        writeln!(out, "Instruction count: {}", self.instructions.len()).ok();
-        writeln!(out, "Instructions:").ok();
-        for instruction in &self.instructions
-        {
-            writeln!(out, "\t{}", instruction).ok();
-        }
-        return Ok(());
     }
 }

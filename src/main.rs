@@ -1,12 +1,12 @@
 use std::io;
 use std::env::args;
 
-use bf::{Emulator, Input};
+use bf::{Emulator, input};
 
 fn main()
 {
-    let mut emulator = Emulator::new();
-    emulator.set_input(Box::new(Input::StdinInput::new()));
+    let mut emulator = Box::new(Emulator::new());
+    emulator.set_input(Box::new(input::StdinInput::new()));
 
     let args: Vec<String> = args().collect();
     if args.len() == 1 {

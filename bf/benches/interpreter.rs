@@ -3,127 +3,60 @@
  *  https://esolangs.org/wiki/User:David.werecat/BFBench
  *  The ROM files are stored in the `roms/benchmarks/bf` directory.
  */
-use std::sync::{Arc, Mutex};        // divan runs on a different thread so we have to protect the emulator with mutexes.
-use std::{fs, hint::black_box};
 
-use bf::{Emulator, Input};
+use std::fs;
 
-macro_rules! bench_simple {
-    ($emulator: expr, $bencher: expr, $path: expr, $reset: expr) => {
-        $emulator.lock().unwrap().load_from_file(black_box($path));
-        
-        $bencher
-            .bench(|| {
-                $emulator.lock().unwrap().run();
-                if $reset {
-                    $emulator.lock().unwrap().reset();
-                }
-            });
-    };
+use bf::{Emulator, input};
+
+macro_rules! profile {
+    ($($token:tt)+) => {
+        {
+            let _instant = std::time::Instant::now();
+            let _result = {
+                $($token)+
+            };
+            
+            (_instant.elapsed(), _result)
+        }
+    }
 }
 
-macro_rules! bench_with_output {
-    ($emulator: expr, $bencher: expr, $path: expr, $output_path: expr, $reset: expr) => {
-        bench_simple!($emulator, $bencher, $path, $reset);
-        let output = fs::read($output_path).expect("(Bench): Test output not found.");
-        // NOTE: use this to overwrite if specific bytes are not identical, this happens mainly due to platform differences.
-        // fs::write($output_path, $emulator.lock().unwrap().get_output()).ok();
-        assert!($emulator.lock().unwrap().get_output() == output, "(Bench): Invalid output for this test.");
-    };
-}
-
-#[divan::bench(
-    max_time = 200,
-    sample_size = 1,
-    sample_count = 1
-)]
-fn bench_mandlebrot(bencher: divan::Bencher) {
-    let emulator = Arc::new(Mutex::new(Emulator::new()));
-    bench_with_output!(emulator, bencher, "../roms/benchmarks/bf/mandelbrot.b", "../roms/benchmarks/bf/mandelbrot.out", false);
-}
-
-/*
- *  TODO: this test doesn't even get close to 50s.
-#[divan::bench(
-    max_time = 50,
-    sample_size = 1,
-    sample_count = 1
-)]
-fn bench_factoring(bencher: divan::Bencher) {
+pub fn run_test(input: &str, rom: &str)
+{
     let mut emulator = Emulator::new();
-    let input = fs::read_to_string("../roms/benchmarks/bf/factor.in").unwrap();
-    emulator.set_input(Box::new(Input::StringInput::new(&input)));
-    let emulator_safe = Arc::new(Mutex::new(emulator));
-    bench_simple!(emulator_safe, bencher, "../roms/benchmarks/bf/factor.b");
-}
-*/
+    if input != ""
+    {
+        let input = fs::read_to_string(input).unwrap();
+        emulator.set_input(Box::new(input::StringInput::new(&input)));
 
-#[divan::bench(
-    max_time = 50,
-    sample_size = 1,
-    sample_count = 1
-)]
-fn bench_long_run(bencher: divan::Bencher) {
-    let emulator = Arc::new(Mutex::new(Emulator::new()));
-    bench_with_output!(emulator, bencher, "../roms/benchmarks/bf/long.b", "../roms/benchmarks/bf/long.out", false);
+    }
+    emulator.load_from_file(rom);
+    emulator.run();
 }
 
-#[divan::bench(
-    max_time = 50,
-    sample_size = 1,
-    sample_count = 1
-)]
-fn bench_self_interpret(bencher: divan::Bencher) {
-    let mut emulator = Emulator::new();
-    let input = fs::read_to_string("../roms/benchmarks/bf/Bootstrap.in").unwrap();
-    emulator.set_input(Box::new(Input::StringInput::new(&input)));
-    let emulator_safe = Arc::new(Mutex::new(emulator));
-    bench_simple!(emulator_safe, bencher, "../roms/benchmarks/bf/Bootstrap.b", false);
+pub fn bench_interpreter()
+{
+    println!("Benching BF in Interpreter Mode:");
+    let tests = [
+        ("Mandlebrot", "", "../roms/benchmarks/bf/mandelbrot.b",  "../roms/benchmarks/bf/mandelbrot.out"),
+        ("Factoring", "../roms/benchmarks/bf/factor.in", "../roms/benchmarks/bf/factor.b",  ""),
+        ("Long Run", "", "../roms/benchmarks/bf/long.b",  "../roms/benchmarks/bf/long.out"),
+        ("Self Interpret", "../roms/benchmarks/bf/Bootstrap.in", "../roms/benchmarks/bf/Bootstrap.b", ""),
+        ("Golden Ratio", "", "../roms/benchmarks/bf/golden.b",  ""),
+        ("Hanoi", "", "../roms/benchmarks/bf/hanoi.b",  "../roms/benchmarks/bf/hanoi.out"),
+        ("99 Bottles of Beer", "", "../roms/benchmarks/bf/beer.b",  "../roms/benchmarks/bf/beer.out"),
+        ("Simple Benchmark", "", "../roms/benchmarks/bf/bench.b",  ""),
+    ];
+    for test in tests
+    {
+        let (time, _) = profile!(run_test(test.1, test.2));
+        if time.as_secs_f64() < 1.0
+        {
+            println!("\t{}: {}ms", test.0, time.as_millis())
+        }
+        else
+        {
+            println!("\t{}: {}s", test.0, time.as_secs_f64())
+        }
+    }
 }
-
-#[divan::bench(
-    max_time = 5,
-    sample_size = 5,
-    sample_count = 5
-)]
-fn bench_golden(bencher: divan::Bencher) {
-    let emulator = Arc::new(Mutex::new(bf::Emulator::new()));
-    bench_simple!(emulator, bencher, "../roms/benchmarks/bf/golden.b", true);
-}
-
-#[divan::bench(
-    max_time = 80,
-    sample_size = 1,
-    sample_count = 1
-)]
-fn bench_hanoi(bencher: divan::Bencher) {
-    let emulator = Arc::new(Mutex::new(bf::Emulator::new()));
-    bench_with_output!(emulator, bencher, "../roms/benchmarks/bf/hanoi.b", "../roms/benchmarks/bf/hanoi.out", false);
-}
-
-/*
- *  TODO: this test doesn't even get close to 5s.
-#[divan::bench(
-    max_time = 5,
-    sample_size = 1,
-    sample_count = 1
-)]
-fn bench_beer(bencher: divan::Bencher) {
-    let emulator = Arc::new(Mutex::new(bf::Emulator::new()));
-    bench_simple!(emulator, bencher, "../roms/benchmarks/bf/beer.b");
-}
-*/
-
-/*
- *  TODO: this test doesn't even get close to 5s.
-#[divan::bench(
-    max_time = 5,
-    sample_size = 1,
-    sample_count = 1
-)]
-fn bench_simple_benchmark() {
-    let mut emulator = bf::Emulator::new();
-    emulator.load_from_file(black_box("../roms/benchmarks/bf/bench.b"));
-    emulator.run()
-}
-*/

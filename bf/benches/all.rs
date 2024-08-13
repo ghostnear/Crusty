@@ -1,6 +1,8 @@
 mod interpreter;
+use interpreter::bench_interpreter;
 
 fn main() {
-    // Run registered benchmarks.
-    divan::main();
+    println!("===========================================================================================");
+    bench_interpreter();
+    println!("===========================================================================================");
 }

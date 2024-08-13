@@ -21,12 +21,11 @@ More info on optimization levels [here](https://code.google.com/archive/p/esotop
 
 #### In Interpreter Mode:
 
-| Device                | CPU                                                   | Mandelbrot    | Factoring         | Long Run  | Self Interpret    | Golden Ratio      | Hanoi     | 99 Bottles of Beer    | Simple Benchmark  |
-| :-------------------- | :---------------------------------------------------- | :-----------: | :---------------: | :-------: | :---------------: | :---------------: | :-------: | :-------------------: | :---------------: |
-| Windows 11 Laptop     | 12th Gen Intel(R) Core(TM) i7-12700H (20) @ 2.688GHz  | 9.93s         | More than 50s.    | 15.68s    | 36.39s            | 0.18s             | 13.77s    | More than 5s.         | More than 5s.     |
-| Motorola Edge 30      | Qualcomm SM7325-AE (8) @ 1.804GHz                     | 14.27s        | -                 | 25.09s    | 43.41s            | 0.28s             | 19.68s    | -                     | -                 |
-| Samsung Galaxy A70q   | Qualcomm SM6150 (8) @ 1.708GHz                        | 25.30s        | -                 | 42.72s    | 80.22s            | 0.44s             | 37.08s    | -                     | -                 |
-
-Median times have been used for tests that are run multiple times because they are fast.
+| Device                | CPU                                                       | Mandelbrot    | Factoring         | Long Run  | Self Interpret    | Golden Ratio      | Hanoi     | 99 Bottles of Beer    | Simple Benchmark  |
+| :-------------------- | :-------------------------------------------------------: | :-----------: | :---------------: | :-------: | :---------------: | :---------------: | :-------: | :-------------------: | :---------------: |
+| Windows 11 Laptop     | 13th Gen Intel(R) Core(TM) i7-13850HX (20) @ max 5.3GHz   | 10.00s        | 2.73s             | 6.44s     | 32.54s            | 174ms             | 803ms     | 1ms                   | 8ms               |
+| Windows 11 Laptop     | 12th Gen Intel(R) Core(TM) i7-12700H (20) @ max 4.7GHz    | 16.65s        | 4.69s             | 11.09s    | 55.07s            | 333ms             | 1.37s     | 2ms                   | 13ms              |
+| Motorola Edge 30      | Qualcomm Snapdragon 778G (SM7325-AE) (8) @ max 2.5GHz     | -             | -                 | -         | -                 | -                 | -         | -                     | -                 |
+| Samsung Galaxy A70q   | Qualcomm Snapdragon 675 (SM6150) (8) @ max 2GHz           | -             | -                 | -         | -                 | -                 | -         | -                     | -                 |
 
 Benchmarks have been done in the same style as the ones done [here](https://esolangs.org/wiki/User:David.werecat/BFBench).

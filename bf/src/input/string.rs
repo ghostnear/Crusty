@@ -28,7 +28,7 @@ impl Input for StringInput
     {
         if self.data.len() == 0
         {
-            return 0x00;
+            return 0x0A;    // '\n'.
         }
 
         return self.data.pop_front().unwrap();
